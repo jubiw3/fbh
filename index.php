@@ -2,8 +2,10 @@
 <html> 
 	<head> 
 <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<link rel="apple-touch-icon" href="apple-touch-icon.jpg"/>
+<link rel="apple-touch-startup-image" href="apple-touch-startup-image.jpg">
 <meta name = "viewport" content = "user-scalable=no, width=device-width">
-	<title>Ganymedek</title> 
+	<title>Cinema with friends</title> 
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.css" />
 	<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
@@ -75,7 +77,7 @@
 <div data-role="page" id="home">
 
 	<div data-role="header">
-		<h1>Ganymedek</h1>
+		<h1>Cinema with friends</h1>
 	</div><!-- /header -->
 
 	<div data-role="content">	
@@ -123,15 +125,20 @@
 	<div data-role="content">	
 <div data-role="fieldcontain">
     <label for="name" id="label"></label>
-    <input type="text" name="name" id="desc" value="twierdzi, że krasnoludki są na świecie"  />
+    <input type="text" name="name" id="desc" value=""/>
 </div>	
-<a onclick="sendRequest();" href="#friends" data-role="button" data-theme="b">Wyślij</a>
-<a href="#friends" data-role="button">Anuluj</a>
 
+<form action="#" method="post">
+<label for="foo">
+<select onchange="insert_film(film_names.options[film_names.selectedIndex].text, film_names.value)" name="film_names" id="film_names">
+</select>
+<a onclick="sendRequest(film_names.options[film_names.selectedIndex].text, film_names.value);" href="#friends" data-role="button" data-theme="b">Invite</a>
+<a href="#friends" data-role="button">Cancel</a>
+</form>
 
 
 <div id="friend_id" style="display:none"></div>
-
+<div id="current_permalink" style="display:none"></div>
 	</div><!-- /content -->
 
 </div><!-- /page -->
@@ -178,7 +185,7 @@ $(document).bind('pageshow',function(event, ui){
 			//$('#login2').html('Login failed, try again');
 		}
 		
-		}, {scope:'email'});
+		}, {scope:'email,friends_location,user_location,publish_actions'});
 		return false;
     }
 
@@ -203,8 +210,13 @@ $(document).bind('pageshow',function(event, ui){
     	}
 	}
 
-function sendRequest() {
+function sendRequest(film,permalink) {
 //  	  alert(uid);
+
+call_phone('Piotr Zgodziński','Kraków',film);
+
+
+open_graph(permalink);	
 
   FB.ui({
     method: 'apprequests',
@@ -212,7 +224,7 @@ function sendRequest() {
     suggestions: $('#friend_id').html(),
   }, 
   function(response) {
-    console.log('sendRequest response: ', response);
+    //console.log('sendRequest response: ', response);
   });
 }
 
@@ -234,7 +246,7 @@ function sortByName(a, b) {
 
 
 function getUserFriends() {
-   FB.api('/me/friends&fields=name,picture', function(response) {
+   FB.api('/me/friends&fields=name,picture,location', function(response) {
      if (!response.error) {
        var markup = '';
        var markup2 = '';
@@ -247,11 +259,16 @@ function getUserFriends() {
        for (var i=0; i < friends.length; i++) 
        {
          var friend = friends[i];
-         //console.log(friend);
-         markup += '<li><a onclick="prepare_dialog(\''+friend.name+'\', '+friend.id+');" data-rel="dialog" href="#dialog"><img src="' + friend.picture.data.url + '"> ' + friend.name + '</a></li>';
+
+		if(friend.location)
+		{
+         //if(friend.name == 'Tomasz Piotrowski')
+		 //console.log(friend.location.name);
+         markup += '<li><a onclick="prepare_dialog(\''+friend.name+'\', '+friend.id+', \''+friend.location.name+'\');" data-rel="dialog" href="#dialog"><img src="' + friend.picture.data.url + '"> ' + friend.name + '</a></li>';
          //markup += '<li class="arrow" id="' + friend.id + '"><a href="#friend'+ friend.id +'"><img src="' + friend.picture.data.url + '"> ' + friend.name + '</a></li>';
          //markup2 += '<div id="friend'+ friend.id +'"><div class="toolbar"><h1>'+ friend.name +'</h1><a class="back" href="#">Back</a></div><ul class="rounded" id="friends"><li>'+ friend.name +'<br><img src="' + friend.picture.data.url + '"></li></ul></div>';
-       }
+		}
+	   }
 
 		$('#lista3').html(markup);
 		$('#lista3').listview ("refresh");
@@ -263,11 +280,75 @@ function getUserFriends() {
  }
 
 
-function prepare_dialog(friend, id)
+function prepare_dialog(friend, id, city)
 {
-	console.log(friend);
-	$('#friend_name').html('Do: '+friend);
+	//console.log(city);
+	$('#friend_name').html('With: '+friend);
 	$('#friend_id').html(id);
+	
+	
+		var page = $.ajax({url: "film.php?city="+city, 
+					   type: "GET",
+					   success: function(r){
+	//
+	//console.log('aaa');
+	myObject = JSON.parse(r);
+	
+	//console.log(myObject);
+$.each(myObject, function(key, value) { 
+
+	//console.log(value);
+	$('#film_names').append('<option value="'+value.permalink+'">'+value.title+'</option>');
+  
+});
+$('#desc').val('wants to see '+ myObject[0].title +' with you!');
+var myselect = $("#film_names");
+myselect[0].selectedIndex = 0;
+myselect.selectmenu("refresh");
+
+
+
+}
+					  });
+}
+
+function insert_film(film, permalink)
+{
+	console.log(film);
+	console.log(permalink);
+	$('#desc').val('wants to see '+ film +' with you!');
+	$('#current_permalink').val(permalink);
+	
+}
+
+function call_phone(who,city,film)
+{
+//console.log(film);
+//		return 1;
+
+		var page = $.ajax({url: 'http://dev.szeldon.pl/rest/call-request.php?fromwho='+who+'&city='+city+'&film='+film+'&phoneToCall=48698669790', 
+					   type: "GET",
+					   success: function(r){
+}
+					  });
+//http://dev.szeldon.pl/rest/call-request.php?fromwho=Tomek&city=Warszawa&film=Sex&phoneToCall=48698669790
+
+}
+
+function open_graph(permalink)
+{
+
+FB.api(
+            '/me/ganymedektwo:suggest?movie=http://filmaster.pl/film/'+ permalink +'/', ///+postUrl,
+            'post',
+            function(response) {
+                if (!response || response.error) {
+                    console.info(response);
+                } else {
+                    //jQuery(idElement).append(' '+response.id);
+                }
+            });
+
 }
 
 
