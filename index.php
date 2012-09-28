@@ -86,7 +86,7 @@
 		
 <ul id="lista" data-role="listview" data-inset="true">
 	<li id="login1"><a id="login2" href="#" onclick="fb_login();">Login with Facebook</a></li>
-	<li id="friends1"><a href="#friends">Post to a friend</a></li>
+	<li id="friends1"><a href="#friends">See a movie with your friend</a></li>
 	<li id="logout1"><a id="logout2" href="#" onclick="fb_logout();">Log out</a></li>
 	
 </ul>
