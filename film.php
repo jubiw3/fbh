@@ -33,6 +33,7 @@ if(isset($_GET['city']))
 
 }
 
+
 if(!$films)
 {
 	$films[]='No films available';
